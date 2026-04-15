@@ -15,9 +15,10 @@ class VectorStoreService(object):
             persist_directory=config.persist_directory,
         )
 
-    def get_retriever(self):
+    def get_retriever(self, top_k: int | None = None):
         """返回向量检索器，方便加入chain"""
-        return self.vector_store.as_retriever(search_kwargs={"k": config.similarity_threshold})
+        k_value = top_k or config.similarity_threshold
+        return self.vector_store.as_retriever(search_kwargs={"k": k_value})
 
 
 if __name__ == '__main__':

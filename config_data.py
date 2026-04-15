@@ -1,26 +1,37 @@
+"""兼容配置入口（建议新代码使用 config/settings.py）。"""
 
-md5_path = "./md5.text"
+from config.settings import (
+    CHAT_MODEL_NAME,
+    CHUNK_OVERLAP,
+    CHUNK_SIZE,
+    COLLECTION_NAME,
+    EMBEDDING_MODEL_NAME,
+    EMBEDDING_PROVIDER,
+    LLM_API_KEY_ENV,
+    LLM_BASE_URL,
+    LLM_PROVIDER,
+    MAX_SPLIT_CHAR_NUMBER,
+    MD5_PATH,
+    OPERATOR,
+    PERSIST_DIRECTORY,
+    RETRIEVAL_TOP_K,
+    SEPARATORS,
+)
 
-
-# Chroma
-collection_name = "rag"
-persist_directory = "./chroma_db"
-
-
-# spliter
-chunk_size = 1000
-chunk_overlap = 100
-separators = ["\n\n", "\n", ".", "!", "?", "。", "！", "？", " ", ""]
-max_split_char_number = 1000        # 文本分割的阈值
-
-#
-similarity_threshold = 1            # 检索返回匹配的文档数量
-
-embedding_model_name = "text-embedding-v4"
-chat_model_name = "qwen3-max"
-
-session_config = {
-        "configurable": {
-            "session_id": "user_001",
-        }
-    }
+# 保留旧变量名，避免旧模块崩溃
+md5_path = str(MD5_PATH)
+collection_name = COLLECTION_NAME
+persist_directory = PERSIST_DIRECTORY
+chunk_size = CHUNK_SIZE
+chunk_overlap = CHUNK_OVERLAP
+separators = SEPARATORS
+max_split_char_number = MAX_SPLIT_CHAR_NUMBER
+similarity_threshold = RETRIEVAL_TOP_K
+llm_provider = LLM_PROVIDER
+embedding_provider = EMBEDDING_PROVIDER
+embedding_model_name = EMBEDDING_MODEL_NAME
+chat_model_name = CHAT_MODEL_NAME
+llm_base_url = LLM_BASE_URL
+llm_api_key_env = LLM_API_KEY_ENV
+operator = OPERATOR
+session_config = {"configurable": {"session_id": "ppt_demo_001"}}
