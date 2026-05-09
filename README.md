@@ -89,3 +89,32 @@ streamlit run app.py
 - 增加讲稿导出（Word/Markdown）。
 - 增加前后端分离部署形态（FastAPI + 前端框架）。
 
+## 9. 商业化版本新增模块
+
+本仓库已新增前后端分离版本，保留原 `streamlit run app.py` 演示入口。
+
+### 数据库初始化
+
+```bash
+mysql -u root -p < database/schema.sql
+```
+
+### 后端启动
+
+```bash
+pip install -r requirements.txt
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+后端默认会在 `http://127.0.0.1:8000` 同时提供 API 和 `frontend/` 静态页面。
+
+### 关键环境变量
+
+- `DATABASE_URL`：MySQL 连接串。
+- `JWT_SECRET_KEY`：JWT 签名密钥，生产环境必须替换。
+- `DASHSCOPE_API_KEY`：大模型与向量模型调用。
+- `PEXELS_API_KEY` / `UNSPLASH_ACCESS_KEY`：自动配图，可任选其一。
+
+### 模板机制
+
+将 `.pptx` 母版放入 `templates/default_master.pptx`，生成器会自动加载该模板；接口也支持在 `/api/ppt/generate` 中传入 `template_path`。

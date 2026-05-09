@@ -5,8 +5,11 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = BASE_DIR / "output" / "generated_ppt"
+TEMP_IMAGE_DIR = BASE_DIR / "output" / "tmp_images"
 DATA_DIR = BASE_DIR / "data"
 CHAT_HISTORY_DIR = BASE_DIR / "chat_history"
+TEMPLATE_DIR = BASE_DIR / "templates"
+DEFAULT_TEMPLATE_PATH = TEMPLATE_DIR / "default_master.pptx"
 
 # 文件去重记录
 MD5_PATH = BASE_DIR / "md5.text"
@@ -38,4 +41,4 @@ MIN_PAGE_COUNT = 6
 MAX_PAGE_COUNT = 10
 DEFAULT_LANGUAGE = "中文"
 OPERATOR = "system"
-
+DEFAULT_PPT_COST_PER_PAGE = 10

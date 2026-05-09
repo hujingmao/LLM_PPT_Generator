@@ -54,7 +54,7 @@ class OutlineService:
         user_prompt = (
             "请将下面文本修复为严格合法的 JSON。"
             "字段结构必须包含: ppt_title, subtitle, theme, pages。"
-            "pages 是数组，每项包含 page_no, page_title, bullets, speaker_notes。\n\n"
+            "pages 是数组，每项包含 page_no, page_title, bullets, speaker_notes，可选 keywords。\n\n"
             f"待修复内容:\n{raw_output}"
         )
         return self.llm_service.invoke(system_prompt, user_prompt)
@@ -92,6 +92,7 @@ class OutlineService:
                     "page_title": "页面标题",
                     "bullets": ["要点1", "要点2", "要点3"],
                     "speaker_notes": "该页讲稿说明",
+                    "keywords": ["高清配图关键词1", "高清配图关键词2"],
                 }
             ],
         }
@@ -105,10 +106,10 @@ class OutlineService:
             "要求:\n"
             "1) 总页数控制在目标页数附近(允许 +/-1)。\n"
             "2) 每页 bullet 3~5 条，内容具体可讲。\n"
-            "3) 页面标题自然，不要机械命名为第X页。\n"
-            "4) 逻辑包含背景、方法/方案、结果/价值、总结展望。\n"
-            "5) 输出严格 JSON 对象。\n\n"
+            "3) 每页 keywords 输出 2~4 个适合图片搜索的关键词，优先使用英文短语。\n"
+            "4) 页面标题自然，不要机械命名为第X页。\n"
+            "5) 逻辑包含背景、方法/方案、结果/价值、总结展望。\n"
+            "6) 输出严格 JSON 对象。\n\n"
             f"输出结构示例:\n{json.dumps(schema_hint, ensure_ascii=False)}"
         )
         return system_prompt, user_prompt
-

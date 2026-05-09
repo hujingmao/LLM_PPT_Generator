@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>基于大模型的 PPT 自动生成系统</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="authView" class="auth-shell">
+      <section class="brand-panel">
+        <div class="brand-mark">P</div>
+        <div>
+          <p class="eyebrow">AI PPT Studio</p>
+          <h1>基于大模型的 PPT 自动生成系统</h1>
+        </div>
+        <div class="brand-metrics">
+          <div>
+            <strong>JWT</strong>
+            <span>账户体系</span>
+          </div>
+          <div>
+            <strong>MySQL</strong>
+            <span>商业数据</span>
+          </div>
+          <div>
+            <strong>PPTX</strong>
+            <span>模板引擎</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="auth-panel">
+        <div class="auth-tabs" role="tablist">
+          <button class="active" type="button" data-auth-tab="login">登录</button>
+          <button type="button" data-auth-tab="register">注册</button>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+          <label>
+            用户名或邮箱
+            <input name="username" autocomplete="username" required />
+          </label>
+          <label>
+            密码
+            <input name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="primary-btn" type="submit">登录</button>
+        </form>
+
+        <form id="registerForm" class="auth-form hidden">
+          <label>
+            用户名
+            <input name="username" minlength="3" maxlength="64" autocomplete="username" required />
+          </label>
+          <label>
+            邮箱
+            <input name="email" type="email" autocomplete="email" />
+          </label>
+          <label>
+            密码
+            <input name="password" type="password" minlength="6" autocomplete="new-password" required />
+          </label>
+          <button class="primary-btn" type="submit">创建账户</button>
+        </form>
+      </section>
+    </div>
+
+    <div id="dashboardView" class="dashboard hidden">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-mark small">P</div>
+          <span>PPT Studio</span>
+        </div>
+        <nav class="side-nav">
+          <button class="active" type="button" data-page="generatePage">生成 PPT</button>
+          <button type="button" data-page="rechargePage">充值中心</button>
+          <button type="button" data-page="recordsPage">生成记录</button>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">工作台</p>
+            <h2 id="pageTitle">生成 PPT</h2>
+          </div>
+          <div class="account-pill">
+            <span id="currentUser">-</span>
+            <strong><span id="currentPoints">0</span> 积分</strong>
+            <button id="logoutBtn" type="button">退出</button>
+          </div>
+        </header>
+
+        <section id="generatePage" class="workspace active">
+          <form id="generateForm" class="generator-grid">
+            <label class="wide-field">
+              PPT 主题
+              <input name="topic" placeholder="例如：基于大模型的 PPT 自动生成系统商业化方案" required />
+            </label>
+            <label>
+              目标场景
+              <select name="scene">
+                <option>工作汇报</option>
+                <option>毕业答辩</option>
+                <option>产品介绍</option>
+                <option>课程汇报</option>
+                <option>学术报告</option>
+              </select>
+            </label>
+            <label>
+              页数
+              <input name="page_count" type="number" min="3" max="20" value="8" />
+            </label>
+            <label>
+              风格
+              <select name="style">
+                <option>简洁商务</option>
+                <option>学术答辩</option>
+                <option>科技蓝白</option>
+                <option>产品发布</option>
+              </select>
+            </label>
+            <label>
+              模板路径
+              <input name="template_path" placeholder="templates/default_master.pptx" />
+            </label>
+            <label class="wide-field">
+              参考上下文
+              <textarea name="retrieval_context" rows="5" placeholder="可粘贴检索资料、产品说明或提纲"></textarea>
+            </label>
+            <label class="toggle-line">
+              <input name="use_images" type="checkbox" checked />
+              自动配图
+            </label>
+            <button id="generateBtn" class="primary-btn wide-action" type="submit">生成并扣积分</button>
+          </form>
+          <div id="generationResult" class="result-panel hidden"></div>
+        </section>
+
+        <section id="rechargePage" class="workspace">
+          <div class="section-head">
+            <h3>充值中心</h3>
+            <button id="refreshOrdersBtn" type="button">刷新订单</button>
+          </div>
+          <div id="packageList" class="package-grid"></div>
+          <div class="table-panel">
+            <h3>充值记录</h3>
+            <div id="orderList" class="record-list"></div>
+          </div>
+        </section>
+
+        <section id="recordsPage" class="workspace">
+          <div class="section-head">
+            <h3>生成记录</h3>
+            <button id="refreshRecordsBtn" type="button">刷新记录</button>
+          </div>
+          <div id="pptRecordList" class="record-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
