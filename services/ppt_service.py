@@ -1,4 +1,11 @@
-"""python-pptx generation service with template and image support."""
+"""python-pptx generation service with template and image support.
+
+PPTService 是最终落地 .pptx 文件的核心服务：
+1. 优先加载 templates/default_master.pptx 或接口传入的模板。
+2. 清空模板示例页，复用模板的页面尺寸、主题和母版资源。
+3. 生成封面、目录、内容页、总结页。
+4. 内容页支持自动配图；没有图片时使用代码内置的视觉占位块。
+"""
 
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +30,7 @@ logger = get_logger(__name__)
 class PPTService:
     """Generate polished PPT files from structured plans."""
 
+    # 统一的字体和品牌色，保证所有页面视觉风格一致。
     font_name = "Microsoft YaHei"
     dark = RGBColor(15, 23, 42)
     ink = RGBColor(31, 41, 55)
@@ -39,6 +47,13 @@ class PPTService:
         template_path: Path | str | None = None,
         image_service: ImageSearchService | None = None,
     ):
+        """初始化 PPT 生成服务。
+
+        output_dir 控制最终 pptx 输出目录；
+        template_path 可指定某个母版；
+        image_service 可在测试时注入假服务，避免真实访问图片 API。
+        """
+
         self.output_dir = output_dir or OUTPUT_DIR
         self.output_dir.mkdir(parents=True, exist_ok=True)
         TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -54,13 +69,18 @@ class PPTService:
         template_path: Path | str | None = None,
         use_images: bool = True,
     ) -> Path:
+        """根据 PPTPlan 生成真实 .pptx 文件，并返回文件路径。"""
+
         prs, used_template = self._load_presentation(template_path)
         if used_template:
+            # 模板文件通常会带示例页，这里清空，只保留母版/主题资源。
             self._clear_existing_slides(prs)
 
+        # 页面顺序：封面 -> 目录 -> 内容页 -> 总结页。
         self._add_cover_slide(prs, plan)
         self._add_toc_slide(prs, plan)
 
+        # 图片服务按需创建；如果未配置图片 API Key，服务会返回 None，不阻塞生成。
         image_service = self.image_service or (ImageSearchService() if use_images else None)
         for page in plan.pages:
             image_path = self._fetch_image_for_page(image_service, page, topic) if use_images else None
@@ -78,10 +98,16 @@ class PPTService:
         return output_path
 
     def _load_presentation(self, template_path: Path | str | None = None) -> tuple[Presentation, Path | None]:
+        """加载模板或创建空白演示文稿。
+
+        返回二元组：(Presentation 对象, 实际使用的模板路径)。
+        """
+
         resolved_template = self._resolve_template_path(template_path or self.template_path)
         if resolved_template:
             return Presentation(str(resolved_template)), resolved_template
 
+        # 没有模板时使用 16:9 宽屏尺寸，适合现代投影和答辩屏幕。
         prs = Presentation()
         prs.slide_width = Inches(13.333)
         prs.slide_height = Inches(7.5)
@@ -89,6 +115,11 @@ class PPTService:
 
     @staticmethod
     def _resolve_template_path(template_path: Path | str | None) -> Path | None:
+        """解析模板路径。
+
+        相对路径会优先在 templates/ 下查找；找不到再按当前工作目录解析。
+        """
+
         if not template_path:
             return None
 
@@ -104,6 +135,11 @@ class PPTService:
 
     @staticmethod
     def _clear_existing_slides(prs: Presentation) -> None:
+        """删除模板中的示例页。
+
+        python-pptx 没有公开删除 slide 的 API，这里使用内部关系表删除。
+        """
+
         slide_id_list = prs.slides._sldIdLst
         for slide_id in list(slide_id_list):
             prs.part.drop_rel(slide_id.rId)
@@ -111,12 +147,20 @@ class PPTService:
 
     @staticmethod
     def _blank_layout(prs: Presentation):
+        """获取空白布局。
+
+        PowerPoint 常见模板的第 7 个布局是空白页；没有时退回最后一个布局。
+        """
+
         return prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[-1]
 
     def _add_cover_slide(self, prs: Presentation, plan: PPTPlan) -> None:
+        """添加封面页。"""
+
         slide = prs.slides.add_slide(self._blank_layout(prs))
         self._add_background(slide, prs, self.dark)
 
+        # 封面采用左侧文字、右侧色块的商务版式，避免空白 PPT 的廉价感。
         margin_x = Inches(0.72)
         title_box = slide.shapes.add_textbox(margin_x, Inches(1.45), int(prs.slide_width * 0.78), Inches(1.5))
         tf = title_box.text_frame
@@ -149,6 +193,8 @@ class PPTService:
         self._add_accent_bar(slide, int(prs.slide_width - Inches(3.4)), Inches(1.25), Inches(2.4), Inches(4.7))
 
     def _add_toc_slide(self, prs: Presentation, plan: PPTPlan) -> None:
+        """添加目录页。"""
+
         slide = prs.slides.add_slide(self._blank_layout(prs))
         self._add_background(slide, prs, self.light)
         self._add_section_title(slide, "目录", "CONTENTS", prs)
@@ -157,6 +203,7 @@ class PPTService:
         row_h = Inches(0.55)
         left_x = Inches(0.9)
         width = int(prs.slide_width - Inches(1.8))
+        # 目录最多展示 10 条，避免页数较多时挤出页面。
         for idx, page in enumerate(plan.pages[:10], start=1):
             y = int(start_y + row_h * (idx - 1))
             marker = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, y, Inches(0.34), Inches(0.34))
@@ -181,6 +228,11 @@ class PPTService:
         page: PPTPage,
         image_path: Path | None,
     ) -> None:
+        """添加单个内容页。
+
+        内容页使用左文右图版式，适合商业汇报；图片不可用时保留视觉占位。
+        """
+
         slide = prs.slides.add_slide(self._blank_layout(prs))
         self._add_background(slide, prs, self.white)
 
@@ -195,6 +247,7 @@ class PPTService:
         p.font.size = Pt(26)
         p.font.color.rgb = self.dark
 
+        # 每页最多展示 5 条要点，超过会显得拥挤，讲稿细节可放入 speaker_notes。
         bullets = page.bullets[:5] or ["待补充内容"]
         body = slide.shapes.add_textbox(Inches(0.82), Inches(1.62), int(prs.slide_width * 0.48), Inches(4.6))
         tf = body.text_frame
@@ -209,6 +262,7 @@ class PPTService:
             p.font.color.rgb = self.ink
             p.space_after = Pt(10)
 
+        # 右侧图片占页面约 36% 宽度，和左侧文字形成稳定的视觉比例。
         image_x = int(prs.slide_width * 0.58)
         image_y = Inches(1.12)
         image_w = int(prs.slide_width * 0.36)
@@ -218,12 +272,15 @@ class PPTService:
         else:
             self._add_visual_fallback(slide, image_x, image_y, image_w, image_h, page)
 
+        # speaker_notes 会写入 PowerPoint 备注区，演讲者模式可以看到。
         if page.speaker_notes:
             slide.notes_slide.notes_text_frame.text = page.speaker_notes
 
         self._add_footer(slide, prs, page.page_title)
 
     def _add_summary_slide(self, prs: Presentation, plan: PPTPlan) -> None:
+        """添加总结页。"""
+
         slide = prs.slides.add_slide(self._blank_layout(prs))
         self._add_background(slide, prs, self.dark)
 
@@ -243,6 +300,7 @@ class PPTService:
             "后续可继续扩展企业模板库、支付回调与团队协作能力。",
         ]
 
+        # 三张并列结论卡片，便于汇报结尾快速回收主线。
         for idx, line in enumerate(conclusion):
             x = Inches(0.82 + idx * 4.05)
             y = Inches(2.25)
@@ -276,6 +334,11 @@ class PPTService:
         page: PPTPage,
         topic: str,
     ) -> Path | None:
+        """尝试为内容页获取配图。
+
+        任何图片 API 异常都会被吞掉并降级为占位视觉，保证 PPT 文件一定能生成。
+        """
+
         if not image_service:
             return None
 
@@ -287,12 +350,16 @@ class PPTService:
             return None
 
     def _add_background(self, slide, prs: Presentation, color: RGBColor) -> None:
+        """绘制整页背景色。"""
+
         bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, prs.slide_height)
         bg.fill.solid()
         bg.fill.fore_color.rgb = color
         bg.line.fill.background()
 
     def _add_section_title(self, slide, title: str, eyebrow: str, prs: Presentation) -> None:
+        """绘制页面标题和右上角英文标识。"""
+
         box = slide.shapes.add_textbox(Inches(0.75), Inches(0.55), Inches(4.8), Inches(0.62))
         tf = box.text_frame
         tf.clear()
@@ -315,6 +382,8 @@ class PPTService:
         p.font.color.rgb = self.teal
 
     def _add_slide_label(self, slide, page_no: int) -> None:
+        """绘制左下角页码标签。"""
+
         box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.72), Inches(6.55), Inches(0.5), Inches(0.34))
         box.fill.solid()
         box.fill.fore_color.rgb = self.dark
@@ -332,6 +401,8 @@ class PPTService:
         p.font.color.rgb = self.white
 
     def _add_footer(self, slide, prs: Presentation, text: str) -> None:
+        """绘制页脚分割线和页脚文本。"""
+
         line = slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE,
             Inches(0.72),
@@ -353,6 +424,8 @@ class PPTService:
         p.font.color.rgb = self.muted
 
     def _add_accent_bar(self, slide, x, y, width, height) -> None:
+        """绘制封面右侧的品牌色装饰条。"""
+
         colors = [self.teal, self.coral, self.amber]
         for idx, color in enumerate(colors):
             bar = slide.shapes.add_shape(
@@ -367,6 +440,11 @@ class PPTService:
             bar.line.fill.background()
 
     def _add_visual_fallback(self, slide, x, y, width, height, page: PPTPage) -> None:
+        """图片不可用时绘制视觉占位块。
+
+        占位块仍显示关键词/标题，避免页面右侧空白。
+        """
+
         panel = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, width, height)
         panel.fill.solid()
         panel.fill.fore_color.rgb = RGBColor(241, 245, 249)
@@ -397,6 +475,11 @@ class PPTService:
 
     @staticmethod
     def _add_cropped_picture(slide, image_path: Path, x, y, width, height) -> None:
+        """按目标框比例裁剪图片。
+
+        python-pptx 的 crop_left/right/top/bottom 是比例值，手动计算可避免图片被强行拉伸变形。
+        """
+
         try:
             with Image.open(image_path) as image:
                 image_width, image_height = image.size

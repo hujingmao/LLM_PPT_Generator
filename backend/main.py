@@ -1,4 +1,11 @@
-"""FastAPI app for the commercial PPT generator backend."""
+"""FastAPI app for the commercial PPT generator backend.
+
+这是前后端分离版本的唯一后端入口：
+1. 提供注册、登录、JWT 鉴权。
+2. 提供充值套餐、模拟支付和订单查询。
+3. 提供 PPT 生成、历史记录和文件下载。
+4. 挂载 frontend/ 静态页面，让一个 uvicorn 进程即可跑完整演示。
+"""
 
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +43,7 @@ from services.ppt_service import PPTService
 
 app = FastAPI(title="LLM PPT Generator API", version="1.0.0")
 
+# 允许前端跨域访问 API。当前默认前端由同一个 FastAPI 服务托管，也兼容独立部署。
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins or ["*"],
@@ -47,11 +55,19 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
+    """健康检查接口，用于确认后端进程是否正常启动。"""
+
     return {"status": "ok"}
 
 
 @app.post("/api/auth/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
 def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenOut:
+    """用户注册。
+
+    注册成功后直接签发 JWT，前端无需再额外登录一次。
+    """
+
+    # 支持 username 必填、email 可选；如果传了 email，则两个字段都要做唯一性检查。
     exists_stmt = select(User).where(User.username == payload.username)
     if payload.email:
         exists_stmt = select(User).where(or_(User.username == payload.username, User.email == payload.email))
@@ -67,6 +83,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenOut:
     )
     db.add(user)
     try:
+        # commit 可能因为并发注册触发唯一索引冲突，所以这里仍然捕获 IntegrityError。
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -79,6 +96,11 @@ def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenOut:
 
 @app.post("/api/auth/login", response_model=TokenOut)
 def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenOut:
+    """用户登录。
+
+    username 字段允许传用户名或邮箱，验证成功后刷新 last_login_at 并签发 JWT。
+    """
+
     user = db.execute(
         select(User).where(or_(User.username == payload.username, User.email == payload.username))
     ).scalar_one_or_none()
@@ -96,11 +118,15 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenOut:
 
 @app.get("/api/users/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)) -> UserOut:
+    """返回当前登录用户信息，前端刷新页面时用它恢复登录态。"""
+
     return UserOut.model_validate(current_user)
 
 
 @app.get("/api/recharge/packages", response_model=list[RechargePackage])
 def get_recharge_packages() -> list[dict]:
+    """返回系统内置充值套餐。"""
+
     return list_packages()
 
 
@@ -110,6 +136,12 @@ def simulate_recharge(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> RechargeOrderOut:
+    """模拟支付充值。
+
+    当前接口点击后立即到账，适合演示商业化闭环。
+    真实产品中应改为：创建 pending 订单 -> 跳转支付 -> 支付回调更新订单和积分。
+    """
+
     order = create_mock_paid_order(db, current_user, payload.package_id)
     return RechargeOrderOut.model_validate(order)
 
@@ -119,6 +151,8 @@ def list_recharge_orders(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[RechargeOrder]:
+    """查询当前用户最近 50 条充值订单。"""
+
     return list(
         db.execute(
             select(RechargeOrder)
@@ -137,6 +171,15 @@ def generate_ppt(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> PPTGenerateResponse:
+    """同步生成 PPT 并扣除积分。
+
+    主要流程：
+    1. 按页数计算积分消耗并做余额预检查。
+    2. 创建 generating 状态的 PPT 记录，方便失败时也能留下错误原因。
+    3. 调用大模型生成结构化大纲，再交给 PPTService 写入 .pptx。
+    4. 再次检查余额，扣积分并把记录更新为 success。
+    """
+
     points_cost = payload.page_count * DEFAULT_PPT_COST_PER_PAGE
     if current_user.points_balance < points_cost:
         raise HTTPException(
@@ -144,6 +187,7 @@ def generate_ppt(
             detail=f"积分不足，本次需要 {points_cost} 积分",
         )
 
+    # template_path 为空时使用 templates/default_master.pptx；不存在则使用代码内置版式。
     template_path = _resolve_template_path(payload.template_path)
     effective_template_path = template_path or (DEFAULT_TEMPLATE_PATH if DEFAULT_TEMPLATE_PATH.exists() else None)
     record = PPTRecord(
@@ -158,6 +202,7 @@ def generate_ppt(
         status="generating",
     )
     db.add(record)
+    # 先落库生成记录，确保后续生成失败时也能反写 failed 状态和错误信息。
     db.commit()
     db.refresh(record)
 
@@ -177,10 +222,12 @@ def generate_ppt(
             use_images=payload.use_images,
         )
 
+        # 生成过程可能比较久，这里重新查用户余额，避免并发请求重复使用旧余额。
         fresh_user = db.get(User, current_user.id)
         if not fresh_user or fresh_user.points_balance < points_cost:
             raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="积分不足")
 
+        # 扣积分和生成记录更新放在同一事务提交，保证账务和历史记录一致。
         fresh_user.points_balance -= points_cost
         record.status = "success"
         record.page_count = len(plan.pages) + 3
@@ -206,6 +253,8 @@ def list_ppt_records(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[PPTRecord]:
+    """查询当前用户最近 50 条 PPT 生成记录。"""
+
     return list(
         db.execute(
             select(PPTRecord)
@@ -224,6 +273,11 @@ def download_ppt(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> FileResponse:
+    """下载某条生成记录对应的 PPT 文件。
+
+    下载时必须校验记录归属当前用户，避免用户通过猜 ID 下载别人的文件。
+    """
+
     record = db.get(PPTRecord, record_id)
     if not record or record.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
@@ -242,6 +296,8 @@ def download_ppt(
 
 
 def _resolve_template_path(template_path: str | None) -> Path | None:
+    """解析前端传入的模板路径，并确保它指向真实的 .pptx 文件。"""
+
     if not template_path:
         return None
     path = Path(template_path)
@@ -255,6 +311,11 @@ def _resolve_template_path(template_path: str | None) -> Path | None:
 
 
 def _mark_ppt_record_failed(db: Session, record_id: int, error_message: str) -> None:
+    """把生成记录标记为失败。
+
+    先 rollback 是因为调用方可能刚经历异常，当前 Session 处于不可继续提交的状态。
+    """
+
     db.rollback()
     record = db.get(PPTRecord, record_id)
     if not record:
@@ -265,4 +326,5 @@ def _mark_ppt_record_failed(db: Session, record_id: int, error_message: str) -> 
 
 
 if FRONTEND_DIR.exists():
+    # 放在最后挂载静态页面，避免 "/" 抢先匹配 API 路由。
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

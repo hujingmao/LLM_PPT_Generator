@@ -7,7 +7,12 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <!--
+      登录/注册视图。
+      默认展示在未登录状态，登录成功后由 app.js 隐藏，并切换到 dashboardView。
+    -->
     <div id="authView" class="auth-shell">
+      <!-- 左侧品牌区：负责传达系统定位和核心技术能力。 -->
       <section class="brand-panel">
         <div class="brand-mark">P</div>
         <div>
@@ -30,6 +35,7 @@
         </div>
       </section>
 
+      <!-- 右侧账户表单区：登录和注册共用同一个卡片，通过 data-auth-tab 切换。 -->
       <section class="auth-panel">
         <div class="auth-tabs" role="tablist">
           <button class="active" type="button" data-auth-tab="login">登录</button>
@@ -66,6 +72,10 @@
       </section>
     </div>
 
+    <!--
+      登录后的工作台视图。
+      左侧是导航，右侧 main 区域根据导航切换不同 workspace。
+    -->
     <div id="dashboardView" class="dashboard hidden">
       <aside class="sidebar">
         <div class="sidebar-brand">
@@ -80,6 +90,7 @@
       </aside>
 
       <main class="main">
+        <!-- 顶部栏展示当前页面标题、用户名、积分余额和退出按钮。 -->
         <header class="topbar">
           <div>
             <p class="eyebrow">工作台</p>
@@ -92,6 +103,7 @@
           </div>
         </header>
 
+        <!-- PPT 生成页面：提交后调用 /api/ppt/generate，同步等待后端生成文件。 -->
         <section id="generatePage" class="workspace active">
           <form id="generateForm" class="generator-grid">
             <label class="wide-field">
@@ -138,6 +150,7 @@
           <div id="generationResult" class="result-panel hidden"></div>
         </section>
 
+        <!-- 充值中心：套餐列表由 /api/recharge/packages 动态渲染。 -->
         <section id="rechargePage" class="workspace">
           <div class="section-head">
             <h3>充值中心</h3>
@@ -150,6 +163,7 @@
           </div>
         </section>
 
+        <!-- 生成记录：展示历史任务状态，成功记录支持下载。 -->
         <section id="recordsPage" class="workspace">
           <div class="section-head">
             <h3>生成记录</h3>
@@ -160,6 +174,7 @@
       </main>
     </div>
 
+    <!-- 全局轻提示，由 showToast 控制显示和隐藏。 -->
     <div id="toast" class="toast hidden"></div>
     <script src="./app.js"></script>
   </body>

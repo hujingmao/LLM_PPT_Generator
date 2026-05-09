@@ -1,4 +1,5 @@
 :root {
+  /* 全局设计变量：集中维护颜色、阴影和基础视觉风格。 */
   --bg: #f5f7fb;
   --panel: #ffffff;
   --ink: #172033;
@@ -13,6 +14,7 @@
 }
 
 * {
+  /* border-box 让宽高计算更稳定，避免 padding 撑爆布局。 */
   box-sizing: border-box;
 }
 
@@ -37,10 +39,12 @@ button {
 }
 
 .hidden {
+  /* JS 通过切换 hidden 控制视图显示，!important 确保覆盖页面区块默认 display。 */
   display: none !important;
 }
 
 .auth-shell {
+  /* 登录页采用左右双栏：品牌说明 + 表单。 */
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(360px, 1fr) minmax(340px, 460px);
@@ -52,6 +56,7 @@ button {
 .auth-panel,
 .workspace,
 .table-panel {
+  /* 主要内容面板统一边框、圆角和阴影，保持商业后台质感。 */
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -59,6 +64,7 @@ button {
 }
 
 .brand-panel {
+  /* 品牌面板使用深色背景，提高登录页第一屏识别度。 */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -138,6 +144,7 @@ button {
 }
 
 .auth-tabs {
+  /* 登录/注册切换按钮，两个等宽列保证切换时布局稳定。 */
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
@@ -179,6 +186,7 @@ label {
 input,
 select,
 textarea {
+  /* 表单控件统一尺寸和边框，方便在生成页复用。 */
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -214,6 +222,7 @@ textarea:focus {
 }
 
 .dashboard {
+  /* 登录后的主布局：固定宽度侧边栏 + 自适应内容区。 */
   min-height: 100vh;
   display: grid;
   grid-template-columns: 238px minmax(0, 1fr);
@@ -292,6 +301,7 @@ textarea:focus {
 }
 
 .workspace {
+  /* 工作区默认隐藏，只有 active 的页面显示。 */
   display: none;
   padding: 24px;
 }
@@ -301,6 +311,7 @@ textarea:focus {
 }
 
 .generator-grid {
+  /* 生成表单使用两列网格，宽字段通过 .wide-field 跨两列。 */
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));
   gap: 18px;
@@ -335,6 +346,7 @@ textarea:focus {
 }
 
 .package-grid {
+  /* 套餐卡片三列展示，移动端会在 media query 中折叠为单列。 */
   display: grid;
   grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 16px;
@@ -376,6 +388,7 @@ textarea:focus {
 }
 
 .record-row {
+  /* 订单/生成记录共用行布局：标题、金额/积分、状态和操作。 */
   display: grid;
   grid-template-columns: minmax(160px, 1.4fr) minmax(90px, 0.6fr) minmax(130px, 0.7fr) auto;
   align-items: center;
@@ -416,6 +429,7 @@ textarea:focus {
 }
 
 .toast {
+  /* 全局提示固定在右下角，避免影响主布局。 */
   position: fixed;
   right: 22px;
   bottom: 22px;
@@ -433,6 +447,7 @@ textarea:focus {
 }
 
 @media (max-width: 920px) {
+  /* 平板和窄屏：双栏布局折叠为单列，导航横向排列。 */
   .auth-shell,
   .dashboard {
     grid-template-columns: 1fr;
@@ -488,6 +503,7 @@ textarea:focus {
 }
 
 @media (max-width: 540px) {
+  /* 手机窄屏：进一步收紧间距，导航改为纵向。 */
   .main {
     padding: 16px;
   }

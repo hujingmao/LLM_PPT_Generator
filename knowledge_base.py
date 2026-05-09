@@ -1,5 +1,7 @@
-"""
-知识库
+"""知识库服务。
+
+负责把文本资料去重、切分、向量化后写入 Chroma。
+RetrievalService 会调用这里的 upload_by_str 完成资料入库。
 """
 
 import hashlib
@@ -21,6 +23,7 @@ def check_md5(md5_str: str) -> bool:
         True  -> 已处理过
     """
     if not os.path.exists(config.md5_path):
+        # 首次运行时 md5.text 可能不存在，创建空文件后视为“未处理过”。
         open(config.md5_path, "w", encoding="utf-8").close()
         return False
 
@@ -47,15 +50,20 @@ def get_string_md5(input_str: str, encoding: str = "utf-8") -> str:
 
 
 class KnowledgeBaseService(object):
+    """本地 Chroma 知识库服务。"""
+
     def __init__(self):
+        # Chroma 持久化目录不存在时先创建，避免初始化失败。
         os.makedirs(config.persist_directory, exist_ok=True)
 
+        # Chroma 同时负责保存向量和文本 metadata。
         self.chroma = Chroma(
             collection_name=config.collection_name,
             embedding_function=build_embedding(),
             persist_directory=config.persist_directory,
         )
 
+        # 长文本切分器：重叠部分可以减少段落边界导致的信息断裂。
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
@@ -73,6 +81,7 @@ class KnowledgeBaseService(object):
         if check_md5(md5_hex):
             return "[跳过] 内容已经存在知识库中"
 
+        # 小文本直接作为一个片段，长文本才切分，减少无意义的向量碎片。
         if len(data) > config.max_split_char_number:
             knowledge_chunks = self.splitter.split_text(data)
         else:
@@ -92,6 +101,7 @@ class KnowledgeBaseService(object):
             metadatas=[metadata.copy() for _ in knowledge_chunks],
         )
 
+        # 入库成功后再记录 MD5，避免失败时错误地标记为已处理。
         save_md5(md5_hex)
 
         return f"[成功] 内容已经成功载入向量库，共写入 {len(knowledge_chunks)} 个文本片段"

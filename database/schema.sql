@@ -1,9 +1,17 @@
+-- 商业化版本数据库初始化脚本。
+-- 运行方式：mysql -u root -p < database/schema.sql
+-- 表设计目标：
+-- 1. Users 存储账户、密码哈希和积分余额。
+-- 2. Recharge_Orders 记录每一笔充值订单。
+-- 3. PPT_Records 记录每一次 PPT 生成任务和文件路径。
+
 CREATE DATABASE IF NOT EXISTS llm_ppt_generator
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
 USE llm_ppt_generator;
 
+-- 用户表：系统登录、积分扣费和订单归属都以 user_id 为主线。
 CREATE TABLE IF NOT EXISTS `Users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` VARCHAR(64) NOT NULL COMMENT '用户名',
@@ -20,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `Users` (
   UNIQUE KEY `uk_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
+-- 充值订单表：当前使用 mock 支付，真实支付接入时可增加第三方支付流水号。
 CREATE TABLE IF NOT EXISTS `Recharge_Orders` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '订单ID',
   `order_no` VARCHAR(64) NOT NULL COMMENT '业务订单号',
@@ -40,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `Recharge_Orders` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='充值订单表';
 
+-- PPT 生成记录表：用于历史记录、下载、失败排查和积分消耗审计。
 CREATE TABLE IF NOT EXISTS `PPT_Records` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '记录ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',

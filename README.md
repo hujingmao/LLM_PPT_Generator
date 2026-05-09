@@ -2,22 +2,38 @@
 
 ## 1. 项目简介
 
-本项目是一个基于 Streamlit 的毕业设计演示系统，目标是将传统“手工做 PPT”的流程升级为“主题驱动 + 参考资料增强 + 自动生成 `.pptx`”的一体化流程。  
-系统基于现有 RAG 能力重构，支持输入主题、上传资料、自动生成结构化页面规划，并输出可下载的真实 PPT 文件。
+本项目采用前后端分离架构，将“主题输入、资料增强、PPT 规划、模板排版、积分扣费、文件下载”串成一套完整的 PPT 自动生成系统。
+
+- 后端：FastAPI + SQLAlchemy + MySQL
+- 前端：原生 HTML / CSS / JavaScript 静态页面
+- 大模型：LangChain + 通义千问 / OpenAI 兼容模型
+- PPT：python-pptx + 模板母版 + 自动配图
 
 ## 2. 功能介绍
 
-- 输入主题后自动生成 PPT 标题、副标题与页面规划。
-- 支持上传参考资料（MVP 支持 `txt` / `md`）并进行检索增强。
-- 输出结构化 JSON（含每页标题、要点、讲稿备注）。
-- 自动生成封面、目录、内容页、总结页。
-- 页面内直接下载 `.pptx` 文件。
+- 用户注册、登录、JWT 鉴权。
+- 积分余额、充值套餐、模拟支付和充值订单记录。
+- 输入主题后自动生成 PPT 标题、副标题、页面规划和讲稿备注。
+- 支持从 `.pptx` 母版模板生成商业化版式。
+- 支持 Pexels / Unsplash 图片 API 自动配图。
+- 保存 PPT 生成记录，并支持历史文件下载。
 
 ## 3. 项目结构
 
 ```bash
 LLM_PPT_Generator/
-├─ app.py
+├─ backend/
+│  ├─ main.py
+│  ├─ models.py
+│  ├─ schemas.py
+│  ├─ security.py
+│  └─ services/
+├─ frontend/
+│  ├─ index.html
+│  ├─ styles.css
+│  └─ app.js
+├─ database/
+│  └─ schema.sql
 ├─ config/
 │  └─ settings.py
 ├─ services/
@@ -25,17 +41,15 @@ LLM_PPT_Generator/
 │  ├─ retrieval_service.py
 │  ├─ outline_service.py
 │  ├─ ppt_service.py
+│  ├─ image_service.py
 │  └─ file_parser_service.py
 ├─ models/
 │  └─ ppt_schema.py
-├─ utils/
-│  ├─ json_utils.py
-│  ├─ filename_utils.py
-│  └─ logger.py
+├─ templates/
+│  └─ README.md
 ├─ output/
 │  └─ generated_ppt/
 ├─ chroma_db/
-├─ chat_history/
 ├─ knowledge_base.py
 ├─ vector_stores.py
 ├─ model_factory.py
@@ -43,78 +57,68 @@ LLM_PPT_Generator/
 └─ requirements.txt
 ```
 
-## 4. 安装步骤
+## 4. 安装依赖
 
 ```bash
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-# source .venv/bin/activate
 
-pip install -r requirements.txt
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install -r requirements.txt
 ```
 
-## 5. 配置说明
-
-本项目默认使用通义千问能力，需提前配置环境变量：
+如果 PowerShell 阻止激活虚拟环境，可先运行：
 
 ```bash
-# 推荐：ChatTongyi + DashScopeEmbeddings
-set DASHSCOPE_API_KEY=你的key
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
 ```
 
-如需使用 OpenAI 兼容模式，可在 `config/settings.py` 中调整 `LLM_PROVIDER` 与相关参数。
+## 5. 初始化数据库
 
-## 6. 启动方式
-
-```bash
-streamlit run app.py
-```
-
-## 7. 使用说明
-
-1. 输入 PPT 主题（必填）。
-2. 选择场景、页数、风格。
-3. 可选上传 `txt` / `md` 参考资料。
-4. 点击“开始生成 PPT”。
-5. 查看结构化规划与每页要点。
-6. 下载系统生成的 `.pptx` 文件。
-
-## 8. 后续可扩展方向
-
-- 增加 `pdf/docx` 解析能力。
-- 增加多套版式模板（商务、答辩、教学等）。
-- 增加图片检索与插图生成。
-- 增加讲稿导出（Word/Markdown）。
-- 增加前后端分离部署形态（FastAPI + 前端框架）。
-
-## 9. 商业化版本新增模块
-
-本仓库已新增前后端分离版本，保留原 `streamlit run app.py` 演示入口。
-
-### 数据库初始化
+先确保 MySQL 服务已启动，然后执行：
 
 ```bash
 mysql -u root -p < database/schema.sql
 ```
 
-### 后端启动
+## 6. 配置环境变量
+
+Windows PowerShell 示例：
 
 ```bash
-pip install -r requirements.txt
-uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+$env:DATABASE_URL="mysql+pymysql://root:你的密码@127.0.0.1:3306/llm_ppt_generator?charset=utf8mb4"
+$env:JWT_SECRET_KEY="请替换成足够长的随机字符串"
+$env:DASHSCOPE_API_KEY="你的通义千问 API Key"
 ```
 
-后端默认会在 `http://127.0.0.1:8000` 同时提供 API 和 `frontend/` 静态页面。
+自动配图可任选其一：
 
-### 关键环境变量
+```bash
+$env:PEXELS_API_KEY="你的 Pexels API Key"
+$env:UNSPLASH_ACCESS_KEY="你的 Unsplash Access Key"
+```
 
-- `DATABASE_URL`：MySQL 连接串。
-- `JWT_SECRET_KEY`：JWT 签名密钥，生产环境必须替换。
-- `DASHSCOPE_API_KEY`：大模型与向量模型调用。
-- `PEXELS_API_KEY` / `UNSPLASH_ACCESS_KEY`：自动配图，可任选其一。
+也可以参考 `.env.example` 统一维护配置。
 
-### 模板机制
+## 7. 启动项目
 
-将 `.pptx` 母版放入 `templates/default_master.pptx`，生成器会自动加载该模板；接口也支持在 `/api/ppt/generate` 中传入 `template_path`。
+```bash
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+启动后访问：
+
+- 前端页面：http://127.0.0.1:8000
+- API 文档：http://127.0.0.1:8000/docs
+
+## 8. 模板机制
+
+将商业母版放到：
+
+```bash
+templates/default_master.pptx
+```
+
+生成器会优先加载该模板，清空示例页并保留母版主题、尺寸和版式资源。接口 `/api/ppt/generate` 也支持传入 `template_path` 指定其他 `.pptx` 模板。
