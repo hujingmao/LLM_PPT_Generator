@@ -88,7 +88,11 @@ mysql -u root -p < database/schema.sql
 Windows PowerShell 示例：
 
 ```bash
-$env:DATABASE_URL="mysql+pymysql://root:你的密码@127.0.0.1:3306/llm_ppt_generator?charset=utf8mb4"
+$env:MYSQL_HOST="localhost"
+$env:MYSQL_PORT="3306"
+$env:MYSQL_USER="root"
+$env:MYSQL_PASSWORD="你的 MySQL 密码"
+$env:MYSQL_DATABASE="llm_ppt_generator"
 $env:JWT_SECRET_KEY="请替换成足够长的随机字符串"
 $env:DASHSCOPE_API_KEY="你的通义千问 API Key"
 ```

@@ -44,7 +44,7 @@ EMBEDDING_PROVIDER = "dashscope"
 EMBEDDING_MODEL_NAME = "text-embedding-v4"
 CHAT_MODEL_NAME = "qwen3-max"
 LLM_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-LLM_API_KEY_ENV = "OPENAI_API_KEY"
+LLM_API_KEY_ENV = "DASHSCOPE_API_KEY"
 
 # 业务默认值：前端默认页数、页数边界和每页扣费规则。
 DEFAULT_PAGE_COUNT = 8

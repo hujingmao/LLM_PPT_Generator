@@ -6,10 +6,34 @@
 
 import os
 from pathlib import Path
+from urllib.parse import quote_plus
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
+
+
+def _build_database_url() -> str:
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    password = os.getenv("MYSQL_PASSWORD")
+    if not password:
+        raise ValueError(
+            "缺少数据库配置：请设置 DATABASE_URL，或设置 MYSQL_HOST、MYSQL_PORT、"
+            "MYSQL_USER、MYSQL_PASSWORD 等 MySQL 环境变量。"
+        )
+
+    host = os.getenv("MYSQL_HOST", "localhost")
+    port = os.getenv("MYSQL_PORT", "3306")
+    user = os.getenv("MYSQL_USER", "root")
+    database = os.getenv("MYSQL_DATABASE", "llm_ppt_generator")
+
+    return (
+        f"mysql+pymysql://{quote_plus(user)}:{quote_plus(password)}"
+        f"@{host}:{port}/{database}?charset=utf8mb4"
+    )
 
 
 class Settings:
@@ -20,10 +44,7 @@ class Settings:
     """
 
     # MySQL 连接串。默认值方便本地快速启动，生产环境必须通过环境变量覆盖密码。
-    database_url: str = os.getenv(
-        "DATABASE_URL",
-        "mysql+pymysql://root:password@127.0.0.1:3306/llm_ppt_generator?charset=utf8mb4",
-    )
+    database_url: str = _build_database_url()
 
     # JWT 签名密钥与算法。jwt_secret_key 生产环境必须换成高强度随机字符串。
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "change-this-secret-in-production")
