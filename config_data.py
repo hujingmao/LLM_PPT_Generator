@@ -1,7 +1,7 @@
-"""兼容配置入口（建议新代码使用 config/settings.py）。
+"""兼容旧模块的配置映射。
 
-早期模块使用小写变量名（如 md5_path、collection_name）。
-为了不大规模改动旧 RAG 代码，这里从新的统一配置中导入常量，再映射成旧变量名。
+早期 RAG 文件使用小写变量名，这里从 config/settings.py 映射一次，
+避免大范围改动旧代码。
 """
 
 from config.settings import (
@@ -22,7 +22,6 @@ from config.settings import (
     SEPARATORS,
 )
 
-# 保留旧变量名，避免旧模块崩溃。
 md5_path = str(MD5_PATH)
 collection_name = COLLECTION_NAME
 persist_directory = PERSIST_DIRECTORY
@@ -38,5 +37,4 @@ chat_model_name = CHAT_MODEL_NAME
 llm_base_url = LLM_BASE_URL
 llm_api_key_env = LLM_API_KEY_ENV
 operator = OPERATOR
-# LangChain 历史会话的默认 session_id，主要用于旧 demo 或测试脚本。
 session_config = {"configurable": {"session_id": "ppt_demo_001"}}

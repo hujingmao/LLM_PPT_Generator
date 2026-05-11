@@ -1,20 +1,20 @@
 :root {
-  /* 全局设计变量：集中维护颜色、阴影和基础视觉风格。 */
-  --bg: #f5f7fb;
+  --bg: #f4f7fb;
   --panel: #ffffff;
   --ink: #172033;
   --muted: #64748b;
-  --line: #d9e2ef;
+  --line: #d8e2ef;
+  --blue: #2563eb;
   --teal: #0f9f8f;
   --coral: #e7664c;
   --amber: #d89016;
   --navy: #111827;
   --danger: #dc2626;
-  --shadow: 0 18px 40px rgba(17, 24, 39, 0.10);
+  --success: #16a34a;
+  --shadow: 0 14px 36px rgba(17, 24, 39, 0.08);
 }
 
 * {
-  /* border-box 让宽高计算更稳定，避免 padding 撑爆布局。 */
   box-sizing: border-box;
 }
 
@@ -39,103 +39,83 @@ button {
 }
 
 .hidden {
-  /* JS 通过切换 hidden 控制视图显示，!important 确保覆盖页面区块默认 display。 */
   display: none !important;
 }
 
 .auth-shell {
-  /* 登录页采用左右双栏：品牌说明 + 表单。 */
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(340px, 460px);
-  padding: 42px;
+  grid-template-columns: minmax(360px, 1fr) minmax(340px, 440px);
   gap: 28px;
+  padding: 42px;
 }
 
-.brand-panel,
+.auth-brand,
 .auth-panel,
-.workspace,
-.table-panel {
-  /* 主要内容面板统一边框、圆角和阴影，保持商业后台质感。 */
-  background: var(--panel);
+.panel {
   border: 1px solid var(--line);
   border-radius: 8px;
+  background: var(--panel);
   box-shadow: var(--shadow);
 }
 
-.brand-panel {
-  /* 品牌面板使用深色背景，提高登录页第一屏识别度。 */
+.auth-brand {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 44px;
-  background: var(--navy);
   color: #f8fafc;
+  background: var(--navy);
 }
 
-.brand-mark {
+.logo-mark {
   width: 54px;
   height: 54px;
   display: grid;
   place-items: center;
+  border-radius: 8px;
   color: #ffffff;
   background: var(--teal);
-  border: 2px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  font-weight: 800;
   font-size: 26px;
+  font-weight: 900;
 }
 
-.brand-mark.small {
-  width: 34px;
-  height: 34px;
-  font-size: 17px;
+.logo-mark.small {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
 }
 
 .eyebrow {
-  margin: 0 0 8px;
-  color: var(--teal);
+  margin: 34px 0 10px;
+  color: #5eead4;
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.brand-panel h1 {
+.auth-brand h1 {
   max-width: 720px;
-  margin: 14px 0 0;
+  margin: 0;
   font-size: 40px;
   line-height: 1.22;
-  letter-spacing: 0;
 }
 
-.brand-metrics {
+.brand-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
-.brand-metrics div {
-  min-height: 84px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.brand-grid span {
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
+  color: #dbeafe;
   background: rgba(255, 255, 255, 0.06);
-}
-
-.brand-metrics strong,
-.brand-metrics span {
-  display: block;
-}
-
-.brand-metrics strong {
-  font-size: 20px;
-}
-
-.brand-metrics span {
-  margin-top: 8px;
-  color: #cbd5e1;
-  font-size: 13px;
+  font-weight: 700;
 }
 
 .auth-panel {
@@ -144,7 +124,6 @@ button {
 }
 
 .auth-tabs {
-  /* 登录/注册切换按钮，两个等宽列保证切换时布局稳定。 */
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
@@ -152,25 +131,27 @@ button {
 }
 
 .auth-tabs button,
-.side-nav button,
+.top-nav button,
+.account-bar button,
 .section-head button,
-.account-pill button,
-.record-row button {
+.record-row button,
+.secondary-btn {
   border: 1px solid var(--line);
+  border-radius: 8px;
   color: var(--ink);
   background: #ffffff;
-  border-radius: 8px;
   padding: 10px 14px;
 }
 
 .auth-tabs button.active,
-.side-nav button.active {
+.top-nav button.active {
   color: #ffffff;
   border-color: var(--navy);
   background: var(--navy);
 }
 
-.auth-form {
+.auth-form,
+.form-grid {
   display: grid;
   gap: 16px;
 }
@@ -180,19 +161,18 @@ label {
   gap: 8px;
   color: #334155;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 input,
 select,
 textarea {
-  /* 表单控件统一尺寸和边框，方便在生成页复用。 */
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #ffffff;
   color: var(--ink);
-  padding: 12px 13px;
+  background: #ffffff;
+  padding: 11px 12px;
   outline: none;
 }
 
@@ -212,113 +192,121 @@ textarea:focus {
   border-radius: 8px;
   color: #ffffff;
   background: var(--teal);
-  padding: 13px 18px;
-  font-weight: 800;
+  padding: 12px 16px;
+  font-weight: 900;
 }
 
-.primary-btn:disabled {
+.primary-btn:disabled,
+button:disabled {
   cursor: wait;
-  opacity: 0.68;
+  opacity: 0.62;
 }
 
-.dashboard {
-  /* 登录后的主布局：固定宽度侧边栏 + 自适应内容区。 */
+.app-shell {
   min-height: 100vh;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  min-height: 76px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
 }
 
-.sidebar {
-  padding: 22px 18px;
-  background: var(--navy);
-  color: #ffffff;
-}
-
-.sidebar-brand {
+.topbar-title {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 800;
 }
 
-.side-nav {
-  display: grid;
+.topbar-title strong,
+.topbar-title span {
+  display: block;
+}
+
+.topbar-title span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.top-nav,
+.account-bar {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-top: 34px;
 }
 
-.side-nav button {
-  width: 100%;
-  text-align: left;
-  color: #dbeafe;
-  background: transparent;
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.side-nav button.active {
-  background: #ffffff;
-  color: var(--navy);
-  border-color: #ffffff;
-}
-
-.main {
-  padding: 26px;
-  overflow: auto;
-}
-
-.topbar,
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.topbar h2,
-.section-head h3,
-.table-panel h3 {
-  margin: 0;
-}
-
-.topbar h2 {
-  font-size: 28px;
-}
-
-.account-pill {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  padding: 6px 8px 6px 14px;
+.account-bar {
+  padding: 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
 }
 
-.account-pill strong {
+.account-bar span {
+  padding-left: 8px;
+}
+
+.account-bar strong {
   color: var(--teal);
 }
 
-.workspace {
-  /* 工作区默认隐藏，只有 active 的页面显示。 */
-  display: none;
+.main {
   padding: 24px;
+}
+
+.workspace {
+  display: none;
 }
 
 .workspace.active {
   display: block;
 }
 
-.generator-grid {
-  /* 生成表单使用两列网格，宽字段通过 .wide-field 跨两列。 */
+.flow-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.25fr);
   gap: 18px;
+  align-items: start;
 }
 
-.wide-field,
-.wide-action {
+.panel {
+  padding: 20px;
+}
+
+.outline-panel,
+.export-panel,
+.history-panel {
+  grid-column: 1 / -1;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.wide-field {
   grid-column: 1 / -1;
 }
 
@@ -333,89 +321,76 @@ textarea:focus {
   height: 18px;
 }
 
-.result-panel {
-  margin-top: 20px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.result-panel button {
-  margin-top: 12px;
-}
-
-.package-grid {
-  /* 套餐卡片三列展示，移动端会在 media query 中折叠为单列。 */
+.upload-box {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 22px;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
 }
 
-.package-card {
-  display: grid;
-  gap: 12px;
-  min-height: 168px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.package-card strong {
-  font-size: 24px;
-  color: var(--navy);
-}
-
-.package-card span {
-  color: var(--muted);
-}
-
-.package-card button {
-  align-self: end;
-}
-
-.table-panel {
-  padding: 18px;
-  box-shadow: none;
-}
-
-.record-list {
+.file-list,
+.record-list,
+.progress-list,
+.outline-preview {
   display: grid;
   gap: 10px;
+}
+
+.file-list {
   margin-top: 14px;
 }
 
-.record-row {
-  /* 订单/生成记录共用行布局：标题、金额/积分、状态和操作。 */
+.file-row,
+.record-row,
+.progress-row {
   display: grid;
-  grid-template-columns: minmax(160px, 1.4fr) minmax(90px, 0.6fr) minmax(130px, 0.7fr) auto;
+  grid-template-columns: minmax(180px, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 13px 14px;
+  padding: 12px 13px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
 }
 
+.file-row label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.file-main strong,
 .record-row strong {
   display: block;
 }
 
-.record-row span {
+.file-main span,
+.record-row span,
+.progress-row span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .status {
   width: max-content;
   padding: 4px 9px;
   border-radius: 8px;
-  color: #0f5132;
-  background: #dcfce7;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
+}
+
+.status.success {
+  color: #14532d;
+  background: #dcfce7;
+}
+
+.status.paid {
+  color: #14532d;
+  background: #dcfce7;
 }
 
 .status.failed {
@@ -423,100 +398,175 @@ textarea:focus {
   background: #fee2e2;
 }
 
-.status.generating {
+.status.pending,
+.status.generating,
+.status.outline_ready {
   color: #78350f;
   background: #fef3c7;
 }
 
+.reference-panel textarea {
+  min-height: 210px;
+}
+
+.outline-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.outline-preview.empty-state {
+  min-height: 150px;
+  place-items: center;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.slide-editor {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.slide-no {
+  display: grid;
+  place-items: center;
+  height: 52px;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--navy);
+  font-weight: 900;
+}
+
+.slide-fields {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 12px;
+}
+
+.slide-fields label:nth-child(3),
+.slide-fields label:nth-child(4),
+.slide-fields label:nth-child(5) {
+  grid-column: 1 / -1;
+}
+
+.slide-fields textarea {
+  min-height: 92px;
+}
+
+.progress-row.done {
+  border-color: rgba(22, 163, 74, 0.28);
+  background: #f0fdf4;
+}
+
+.progress-row.active {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: #eff6ff;
+}
+
+.download-area {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(15, 159, 143, 0.28);
+  border-radius: 8px;
+  background: #ecfdf5;
+}
+
+.download-area button {
+  margin-top: 10px;
+}
+
+.package-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.package-card {
+  display: grid;
+  gap: 12px;
+  min-height: 160px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.package-card strong {
+  color: var(--navy);
+  font-size: 24px;
+}
+
+.record-row {
+  grid-template-columns: minmax(220px, 1fr) 120px 130px auto;
+}
+
 .toast {
-  /* 全局提示固定在右下角，避免影响主布局。 */
   position: fixed;
   right: 22px;
   bottom: 22px;
-  max-width: 360px;
+  z-index: 40;
+  max-width: 380px;
   padding: 13px 16px;
   border-radius: 8px;
   color: #ffffff;
   background: var(--navy);
   box-shadow: var(--shadow);
-  z-index: 20;
 }
 
 .toast.error {
   background: var(--danger);
 }
 
-@media (max-width: 920px) {
-  /* 平板和窄屏：双栏布局折叠为单列，导航横向排列。 */
-  .auth-shell,
-  .dashboard {
+@media (max-width: 1180px) {
+  .app-topbar {
     grid-template-columns: 1fr;
   }
 
-  .auth-shell {
-    padding: 18px;
+  .top-nav,
+  .account-bar {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
-  .brand-panel {
-    min-height: 360px;
-  }
-
-  .brand-panel h1 {
-    font-size: 30px;
-  }
-
-  .brand-metrics,
-  .package-grid,
-  .generator-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .side-nav {
-    grid-template-columns: repeat(3, 1fr);
-    margin-top: 18px;
-  }
-
-  .side-nav button {
-    text-align: center;
-    padding-inline: 8px;
-  }
-
-  .topbar {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .account-pill {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .record-row {
+  .flow-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 540px) {
-  /* 手机窄屏：进一步收紧间距，导航改为纵向。 */
+@media (max-width: 760px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .auth-brand h1 {
+    font-size: 30px;
+  }
+
+  .brand-grid,
+  .form-grid,
+  .outline-meta,
+  .slide-fields,
+  .package-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-box,
+  .record-row,
+  .file-row,
+  .slide-editor {
+    grid-template-columns: 1fr;
+  }
+
   .main {
     padding: 16px;
-  }
-
-  .workspace {
-    padding: 16px;
-  }
-
-  .brand-metrics {
-    gap: 8px;
-  }
-
-  .side-nav {
-    grid-template-columns: 1fr;
   }
 }

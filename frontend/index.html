@@ -7,37 +7,21 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <!--
-      登录/注册视图。
-      默认展示在未登录状态，登录成功后由 app.js 隐藏，并切换到 dashboardView。
-    -->
     <div id="authView" class="auth-shell">
-      <!-- 左侧品牌区：负责传达系统定位和核心技术能力。 -->
-      <section class="brand-panel">
-        <div class="brand-mark">P</div>
-        <div>
-          <p class="eyebrow">AI PPT Studio</p>
-          <h1>基于大模型的 PPT 自动生成系统</h1>
-        </div>
-        <div class="brand-metrics">
-          <div>
-            <strong>JWT</strong>
-            <span>账户体系</span>
-          </div>
-          <div>
-            <strong>MySQL</strong>
-            <span>商业数据</span>
-          </div>
-          <div>
-            <strong>PPTX</strong>
-            <span>模板引擎</span>
-          </div>
+      <section class="auth-brand">
+        <div class="logo-mark">P</div>
+        <p class="eyebrow">LLM PPT Generator</p>
+        <h1>基于大模型的 PPT 自动生成系统</h1>
+        <div class="brand-grid">
+          <span>FastAPI</span>
+          <span>LangChain</span>
+          <span>Chroma RAG</span>
+          <span>python-pptx</span>
         </div>
       </section>
 
-      <!-- 右侧账户表单区：登录和注册共用同一个卡片，通过 data-auth-tab 切换。 -->
       <section class="auth-panel">
-        <div class="auth-tabs" role="tablist">
+        <div class="auth-tabs">
           <button class="active" type="button" data-auth-tab="login">登录</button>
           <button type="button" data-auth-tab="register">注册</button>
         </div>
@@ -72,109 +56,158 @@
       </section>
     </div>
 
-    <!--
-      登录后的工作台视图。
-      左侧是导航，右侧 main 区域根据导航切换不同 workspace。
-    -->
-    <div id="dashboardView" class="dashboard hidden">
-      <aside class="sidebar">
-        <div class="sidebar-brand">
-          <div class="brand-mark small">P</div>
-          <span>PPT Studio</span>
+    <div id="appView" class="app-shell hidden">
+      <header class="app-topbar">
+        <div class="topbar-title">
+          <div class="logo-mark small">P</div>
+          <div>
+            <strong>基于大模型的 PPT 自动生成系统</strong>
+            <span>资料解析 · 检索增强 · 大纲编辑 · 模板导出</span>
+          </div>
         </div>
-        <nav class="side-nav">
-          <button class="active" type="button" data-page="generatePage">生成 PPT</button>
+        <nav class="top-nav">
+          <button class="active" type="button" data-page="generatePage">PPT 生成</button>
           <button type="button" data-page="rechargePage">充值中心</button>
-          <button type="button" data-page="recordsPage">生成记录</button>
+          <button type="button" data-page="recordsPage">历史记录</button>
         </nav>
-      </aside>
+        <div class="account-bar">
+          <span id="currentUser">-</span>
+          <strong><span id="currentPoints">0</span> 积分</strong>
+          <button id="logoutBtn" type="button">退出登录</button>
+        </div>
+      </header>
 
       <main class="main">
-        <!-- 顶部栏展示当前页面标题、用户名、积分余额和退出按钮。 -->
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">工作台</p>
-            <h2 id="pageTitle">生成 PPT</h2>
-          </div>
-          <div class="account-pill">
-            <span id="currentUser">-</span>
-            <strong><span id="currentPoints">0</span> 积分</strong>
-            <button id="logoutBtn" type="button">退出</button>
-          </div>
-        </header>
-
-        <!-- PPT 生成页面：提交后调用 /api/ppt/generate，同步等待后端生成文件。 -->
         <section id="generatePage" class="workspace active">
-          <form id="generateForm" class="generator-grid">
-            <label class="wide-field">
-              PPT 主题
-              <input name="topic" placeholder="例如：基于大模型的 PPT 自动生成系统商业化方案" required />
-            </label>
-            <label>
-              目标场景
-              <select name="scene">
-                <option>工作汇报</option>
-                <option>毕业答辩</option>
-                <option>产品介绍</option>
-                <option>课程汇报</option>
-                <option>学术报告</option>
-              </select>
-            </label>
-            <label>
-              页数
-              <input name="page_count" type="number" min="3" max="20" value="8" />
-            </label>
-            <label>
-              风格
-              <select name="style">
-                <option>简洁商务</option>
-                <option>学术答辩</option>
-                <option>科技蓝白</option>
-                <option>产品发布</option>
-              </select>
-            </label>
-            <label>
-              模板路径
-              <input name="template_path" placeholder="templates/default_master.pptx" />
-            </label>
-            <label class="wide-field">
-              参考上下文
-              <textarea name="retrieval_context" rows="5" placeholder="可粘贴检索资料、产品说明或提纲"></textarea>
-            </label>
-            <label class="toggle-line">
-              <input name="use_images" type="checkbox" checked />
-              自动配图
-            </label>
-            <button id="generateBtn" class="primary-btn wide-action" type="submit">生成并扣积分</button>
-          </form>
-          <div id="generationResult" class="result-panel hidden"></div>
+          <div class="flow-grid">
+            <section class="panel settings-panel">
+              <div class="section-head">
+                <h2>PPT 参数设置</h2>
+              </div>
+              <div class="form-grid">
+                <label class="wide-field">
+                  PPT 主题
+                  <input id="topicInput" placeholder="基于大模型的 PPT 自动生成系统" required />
+                </label>
+                <label>
+                  使用场景
+                  <select id="sceneSelect">
+                    <option>毕业答辩</option>
+                    <option>课程汇报</option>
+                    <option>商业汇报</option>
+                    <option>产品介绍</option>
+                    <option>学术报告</option>
+                  </select>
+                </label>
+                <label>
+                  页数
+                  <input id="pageCountInput" type="number" min="3" max="20" value="8" />
+                </label>
+                <label>
+                  风格
+                  <select id="styleSelect">
+                    <option>科技蓝白</option>
+                    <option>学术答辩</option>
+                    <option>简洁商务</option>
+                    <option>简约黑白</option>
+                    <option>产品发布</option>
+                  </select>
+                </label>
+                <label>
+                  模板选择
+                  <select id="templateSelect"></select>
+                </label>
+                <label class="toggle-line">
+                  <input id="useImagesCheckbox" type="checkbox" checked />
+                  自动配图
+                </label>
+              </div>
+            </section>
+
+            <section class="panel upload-panel">
+              <div class="section-head">
+                <h2>上传参考资料</h2>
+                <button id="refreshFilesBtn" type="button">刷新</button>
+              </div>
+              <div class="upload-box">
+                <input id="referenceFileInput" type="file" multiple accept=".txt,.md,.pdf,.docx,.pptx" />
+                <button id="uploadFileBtn" class="secondary-btn" type="button">上传文件</button>
+              </div>
+              <div id="uploadedFileList" class="file-list"></div>
+            </section>
+
+            <section class="panel reference-panel">
+              <div class="section-head">
+                <h2>参考资料输入</h2>
+              </div>
+              <textarea id="referenceContextInput" rows="8" placeholder="可以粘贴补充资料、设计说明、答辩要点或系统流程。"></textarea>
+            </section>
+
+            <section class="panel outline-panel">
+              <div class="section-head">
+                <h2>大纲生成与二次编辑</h2>
+                <button id="generateOutlineBtn" class="primary-btn" type="button">生成大纲</button>
+              </div>
+              <div id="outlineMeta" class="outline-meta hidden">
+                <label>
+                  标题
+                  <input id="outlineTitleInput" />
+                </label>
+                <label>
+                  副标题
+                  <input id="outlineSubtitleInput" />
+                </label>
+              </div>
+              <div id="outlinePreview" class="outline-preview empty-state">等待生成大纲</div>
+            </section>
+
+            <section class="panel export-panel">
+              <div class="section-head">
+                <h2>PPT 导出</h2>
+                <button id="exportPptBtn" class="primary-btn" type="button" disabled>确认生成 PPT</button>
+              </div>
+              <div id="progressList" class="progress-list"></div>
+              <div id="downloadArea" class="download-area hidden"></div>
+            </section>
+
+            <section class="panel history-panel">
+              <div class="section-head">
+                <h2>历史 PPT</h2>
+                <button id="refreshRecordsInlineBtn" type="button">刷新</button>
+              </div>
+              <div id="historyList" class="record-list"></div>
+            </section>
+          </div>
         </section>
 
-        <!-- 充值中心：套餐列表由 /api/recharge/packages 动态渲染。 -->
         <section id="rechargePage" class="workspace">
-          <div class="section-head">
-            <h3>充值中心</h3>
-            <button id="refreshOrdersBtn" type="button">刷新订单</button>
-          </div>
-          <div id="packageList" class="package-grid"></div>
-          <div class="table-panel">
-            <h3>充值记录</h3>
+          <section class="panel">
+            <div class="section-head">
+              <h2>充值中心</h2>
+              <button id="refreshOrdersBtn" type="button">刷新订单</button>
+            </div>
+            <div id="packageList" class="package-grid"></div>
+          </section>
+          <section class="panel">
+            <div class="section-head">
+              <h2>充值记录</h2>
+            </div>
             <div id="orderList" class="record-list"></div>
-          </div>
+          </section>
         </section>
 
-        <!-- 生成记录：展示历史任务状态，成功记录支持下载。 -->
         <section id="recordsPage" class="workspace">
-          <div class="section-head">
-            <h3>生成记录</h3>
-            <button id="refreshRecordsBtn" type="button">刷新记录</button>
-          </div>
-          <div id="pptRecordList" class="record-list"></div>
+          <section class="panel">
+            <div class="section-head">
+              <h2>历史记录</h2>
+              <button id="refreshRecordsBtn" type="button">刷新记录</button>
+            </div>
+            <div id="pptRecordList" class="record-list"></div>
+          </section>
         </section>
       </main>
     </div>
 
-    <!-- 全局轻提示，由 showToast 控制显示和隐藏。 -->
     <div id="toast" class="toast hidden"></div>
     <script src="./app.js"></script>
   </body>

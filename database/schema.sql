@@ -1,9 +1,5 @@
--- 商业化版本数据库初始化脚本。
+-- 基于大模型的 PPT 自动生成系统数据库初始化脚本
 -- 运行方式：mysql -u root -p < database/schema.sql
--- 表设计目标：
--- 1. Users 存储账户、密码哈希和积分余额。
--- 2. Recharge_Orders 记录每一笔充值订单。
--- 3. PPT_Records 记录每一次 PPT 生成任务和文件路径。
 
 CREATE DATABASE IF NOT EXISTS llm_ppt_generator
   DEFAULT CHARACTER SET utf8mb4
@@ -11,7 +7,7 @@ CREATE DATABASE IF NOT EXISTS llm_ppt_generator
 
 USE llm_ppt_generator;
 
--- 用户表：系统登录、积分扣费和订单归属都以 user_id 为主线。
+-- 用户表：保存登录信息、积分余额和账户状态。
 CREATE TABLE IF NOT EXISTS `Users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` VARCHAR(64) NOT NULL COMMENT '用户名',
@@ -28,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `Users` (
   UNIQUE KEY `uk_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 充值订单表：当前使用 mock 支付，真实支付接入时可增加第三方支付流水号。
+-- 充值订单表：保留模拟支付闭环，便于展示商业化能力。
 CREATE TABLE IF NOT EXISTS `Recharge_Orders` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '订单ID',
   `order_no` VARCHAR(64) NOT NULL COMMENT '业务订单号',
@@ -49,25 +45,49 @@ CREATE TABLE IF NOT EXISTS `Recharge_Orders` (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='充值订单表';
 
--- PPT 生成记录表：用于历史记录、下载、失败排查和积分消耗审计。
+-- 上传文件表：记录用户上传资料的基本信息和解析状态。
+CREATE TABLE IF NOT EXISTS `uploaded_files` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '文件ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+  `original_filename` VARCHAR(255) NOT NULL COMMENT '原始文件名',
+  `stored_filename` VARCHAR(255) NOT NULL COMMENT '服务端存储文件名',
+  `file_path` VARCHAR(1024) NOT NULL COMMENT '服务端文件路径',
+  `file_type` VARCHAR(16) NOT NULL COMMENT '文件类型',
+  `file_size` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文件大小',
+  `parse_status` ENUM('pending', 'success', 'failed') NOT NULL DEFAULT 'pending' COMMENT '解析状态',
+  `parse_error` TEXT NULL COMMENT '解析失败原因',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_uploaded_files_user_created_at` (`user_id`, `created_at`),
+  KEY `idx_uploaded_files_parse_status` (`parse_status`),
+  CONSTRAINT `fk_uploaded_files_user`
+    FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='上传文件表';
+
+-- PPT 生成记录表：保存大纲、进度、文件路径、下载地址和积分消耗。
 CREATE TABLE IF NOT EXISTS `PPT_Records` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '记录ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
   `ppt_topic` VARCHAR(255) NOT NULL COMMENT 'PPT主题',
-  `scene` VARCHAR(64) NULL COMMENT '应用场景',
+  `scene` VARCHAR(64) NULL COMMENT '使用场景',
   `style` VARCHAR(64) NULL COMMENT '生成风格',
   `page_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '生成页数',
   `points_cost` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '消耗积分',
-  `file_path` VARCHAR(1024) NULL COMMENT '文件路径',
-  `template_name` VARCHAR(255) NULL COMMENT '使用模板',
+  `template_id` VARCHAR(64) NULL COMMENT '模板ID',
+  `template_name` VARCHAR(255) NULL COMMENT '模板名称',
   `image_provider` VARCHAR(32) NULL COMMENT '配图来源',
-  `status` ENUM('generating', 'success', 'failed') NOT NULL DEFAULT 'generating' COMMENT '生成状态',
+  `outline_json` LONGTEXT NULL COMMENT '确认后的大纲JSON',
+  `progress_step` VARCHAR(255) NULL COMMENT '当前进度',
   `error_message` TEXT NULL COMMENT '失败原因',
+  `file_path` VARCHAR(1024) NULL COMMENT 'PPT文件路径',
+  `download_url` VARCHAR(1024) NULL COMMENT '下载地址',
+  `status` ENUM('outline_ready', 'generating', 'success', 'failed') NOT NULL DEFAULT 'generating' COMMENT '生成状态',
   `generated_at` DATETIME NULL COMMENT '生成完成时间',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  KEY `idx_ppt_records_user_generated_at` (`user_id`, `generated_at`),
+  KEY `idx_ppt_records_user_created_at` (`user_id`, `created_at`),
   KEY `idx_ppt_records_status_created_at` (`status`, `created_at`),
   CONSTRAINT `fk_ppt_records_user`
     FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`)
